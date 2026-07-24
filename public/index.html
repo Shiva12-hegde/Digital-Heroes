@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Pulse | Production-Grade URL Audit Service</title>
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+  <div class="glass-bg"></div>
+  <div class="glow-sphere glow-1"></div>
+  <div class="glow-sphere glow-2"></div>
+
+  <div class="app-container">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-icon">⚡</span>
+        <h1>Page Pulse</h1>
+      </div>
+      <p class="subtitle">Production-Grade URL Auditing & Optimization Engine</p>
+      <div class="header-badges">
+        <a href="/api/docs" class="badge-link" target="_blank">📚 Swagger Docs</a>
+        <a href="/api/health" class="badge-link" target="_blank">🟢 Health Telemetry</a>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <!-- Input Card -->
+      <section class="card input-card">
+        <h2>Verify Page Performance & Security</h2>
+        <p class="card-desc">Enter any domain or URL to run a real-time HTTP, SSL, accessibility, and SEO audit.</p>
+        
+        <form id="auditForm" class="audit-form">
+          <div class="input-wrapper">
+            <span class="input-icon">🔗</span>
+            <input 
+              type="text" 
+              id="urlInput" 
+              placeholder="e.g. google.com or https://github.com" 
+              required
+              autocomplete="off"
+            >
+          </div>
+          <button type="submit" id="submitBtn">
+            <span class="btn-text">Run Pulse Audit</span>
+            <div class="spinner hidden"></div>
+          </button>
+        </form>
+        <div id="errorBanner" class="error-banner hidden"></div>
+      </section>
+
+      <!-- Loading Placeholder -->
+      <section id="loadingSkeleton" class="loading-skeleton hidden">
+        <div class="skeleton-line title"></div>
+        <div class="skeleton-grid">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+        </div>
+      </section>
+
+      <!-- Results Container -->
+      <section id="resultsSection" class="results-container hidden">
+        
+        <!-- Score Overview Dashboard -->
+        <div class="card scores-card">
+          <div class="meta-status">
+            <div class="meta-item">
+              <span class="meta-label">Target URL:</span>
+              <span id="resTargetUrl" class="meta-val">https://example.com</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Cache Status:</span>
+              <span id="resCacheStatus" class="badge badge-cache">Cache Miss</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Request ID:</span>
+              <div class="request-id-wrapper">
+                <span id="resRequestId" class="meta-val font-mono">uuid-placeholder</span>
+                <button type="button" id="copyIdBtn" class="copy-btn" title="Copy Request ID">📋</button>
+              </div>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Audited At:</span>
+              <span id="resAuditedAt" class="meta-val">—</span>
+            </div>
+          </div>
+
+          <div class="scores-grid">
+            <div class="score-ring-container">
+              <div class="score-ring" id="ringAverage" data-score="0">
+                <svg>
+                  <circle cx="60" cy="60" r="50"></circle>
+                  <circle cx="60" cy="60" r="50" class="progress"></circle>
+                </svg>
+                <div class="score-number">
+                  <span class="num" id="scoreAverage">0</span>
+                  <span class="label">Pulse Score</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="scores-subcategories">
+              <div class="sub-score-bar">
+                <div class="bar-header">
+                  <span>SEO</span>
+                  <span id="scoreSeo">0%</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" id="fillSeo" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div class="sub-score-bar">
+                <div class="bar-header">
+                  <span>Accessibility</span>
+                  <span id="scoreAccess">0%</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" id="fillAccess" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div class="sub-score-bar">
+                <div class="bar-header">
+                  <span>Best Practices</span>
+                  <span id="scoreBest">0%</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" id="fillBest" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div class="sub-score-bar">
+                <div class="bar-header">
+                  <span>Performance</span>
+                  <span id="scorePerf">0%</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" id="fillPerf" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="details-grid">
+          
+          <!-- HTTP Status Card -->
+          <div class="card detail-card">
+            <div class="card-header">
+              <span class="card-header-icon">🌐</span>
+              <h3>HTTP Status & Connection</h3>
+            </div>
+            <ul class="check-list" id="httpCheckList">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+
+          <!-- SSL Certificate Card -->
+          <div class="card detail-card">
+            <div class="card-header">
+              <span class="card-header-icon">🛡️</span>
+              <h3>Security & SSL Certificate</h3>
+            </div>
+            <ul class="check-list" id="sslCheckList">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+
+          <!-- SEO Details Card -->
+          <div class="card detail-card">
+            <div class="card-header">
+              <span class="card-header-icon">🔍</span>
+              <h3>Search Engine Optimization</h3>
+            </div>
+            <ul class="check-list" id="seoCheckList">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+
+          <!-- Performance & Weights Card -->
+          <div class="card detail-card">
+            <div class="card-header">
+              <span class="card-header-icon">⚡</span>
+              <h3>Performance & Resource Bloat</h3>
+            </div>
+            <ul class="check-list" id="perfCheckList">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+
+        </div>
+
+        <!-- Raw JSON Accordion -->
+        <div class="card json-card">
+          <button class="json-toggle" id="jsonToggle">
+            <span>🛠️ Developer Inspection (Raw JSON Payload)</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="json-content hidden" id="jsonContent">
+            <pre><code id="jsonCode">{}</code></pre>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>&copy; 2026 Page Pulse URL Audit. All rights reserved.</p>
+      <p class="required-footer">
+        <a href="https://digitalheroesco.com" target="_blank" rel="noopener noreferrer">
+          Built for Digital Heroes Training Task
+        </a>
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const auditForm = document.getElementById('auditForm');
+      const urlInput = document.getElementById('urlInput');
+      const submitBtn = document.getElementById('submitBtn');
+      const spinner = submitBtn.querySelector('.spinner');
+      const btnText = submitBtn.querySelector('.btn-text');
+      const errorBanner = document.getElementById('errorBanner');
+      const loadingSkeleton = document.getElementById('loadingSkeleton');
+      const resultsSection = document.getElementById('resultsSection');
+      const jsonToggle = document.getElementById('jsonToggle');
+      const jsonContent = document.getElementById('jsonContent');
+      const jsonCode = document.getElementById('jsonCode');
+
+      // State variable for raw json holding
+      let currentAuditPayload = null;
+
+      // Handle raw JSON display toggle
+      jsonToggle.addEventListener('click', () => {
+        jsonContent.classList.toggle('hidden');
+        const arrow = jsonToggle.querySelector('.arrow');
+        arrow.textContent = jsonContent.classList.contains('hidden') ? '▼' : '▲';
+      });
+
+      // Handle Copy Request ID click
+      const copyIdBtn = document.getElementById('copyIdBtn');
+      copyIdBtn.addEventListener('click', () => {
+        const reqId = document.getElementById('resRequestId').textContent;
+        if (reqId && reqId !== 'uuid-placeholder') {
+          navigator.clipboard.writeText(reqId).then(() => {
+            copyIdBtn.textContent = '✅';
+            copyIdBtn.classList.add('copied');
+            setTimeout(() => {
+              copyIdBtn.textContent = '📋';
+              copyIdBtn.classList.remove('copied');
+            }, 1500);
+          }).catch(err => {
+            console.error('Failed to copy request ID: ', err);
+          });
+        }
+      });
+
+      // Submit form
+      auditForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const targetUrl = urlInput.value.trim();
+        if (!targetUrl) return;
+
+        // Reset UI state
+        errorBanner.classList.add('hidden');
+        errorBanner.innerHTML = '';
+        resultsSection.classList.add('hidden');
+        
+        // Show spinner / loading state
+        submitBtn.disabled = true;
+        btnText.classList.add('hidden');
+        spinner.classList.remove('hidden');
+        loadingSkeleton.classList.remove('hidden');
+
+        try {
+          const response = await fetch('/api/audit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: targetUrl })
+          });
+
+          const correlationId = response.headers.get('X-Request-ID') || 'unknown';
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw {
+              message: data.message || `API error occurred (${response.status})`,
+              details: data.details || null,
+              requestId: data.requestId || correlationId
+            };
+          }
+
+          currentAuditPayload = data;
+          renderResults(data, correlationId);
+        } catch (err) {
+          console.error('Audit execution error:', err);
+          showError(err);
+        } finally {
+          // Restore button state
+          submitBtn.disabled = false;
+          spinner.classList.add('hidden');
+          btnText.classList.remove('hidden');
+          loadingSkeleton.classList.add('hidden');
+        }
+      });
+
+      function showError(err) {
+        errorBanner.classList.remove('hidden');
+        
+        let errorHtml = `<strong>Audit Failed:</strong> ${err.message}`;
+        if (err.details && Array.isArray(err.details)) {
+          errorHtml += '<ul class="err-details-list">';
+          err.details.forEach(d => {
+            errorHtml += `<li><code>${d.field}</code>: ${d.issue}</li>`;
+          });
+          errorHtml += '</ul>';
+        }
+        if (err.requestId) {
+          errorHtml += `<div class="err-req-id">Request ID: <code>${err.requestId}</code></div>`;
+        }
+        
+        errorBanner.innerHTML = errorHtml;
+      }
+
+      function renderResults(data, correlationId) {
+        resultsSection.classList.remove('hidden');
+
+        // Populate Meta
+        document.getElementById('resTargetUrl').textContent = data.url;
+        document.getElementById('resRequestId').textContent = correlationId;
+
+        // Populate Audited At timestamp
+        const dateOptions = {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        };
+        const auditedTime = data.cache && data.cache.cached && data.cache.cachedAt
+          ? new Date(data.cache.cachedAt).toLocaleString('en-US', dateOptions)
+          : new Date().toLocaleString('en-US', dateOptions);
+        document.getElementById('resAuditedAt').textContent = auditedTime;
+
+        // Populate Cache Status
+        const cacheBadge = document.getElementById('resCacheStatus');
+        if (data.cache && data.cache.cached) {
+          cacheBadge.textContent = `🟢 Cached Result (Expires in ${data.cache.expiresIn}s)`;
+          cacheBadge.className = 'badge badge-cache cache-hit';
+        } else {
+          cacheBadge.textContent = '⚡ Fresh Audit';
+          cacheBadge.className = 'badge badge-cache cache-miss';
+        }
+
+        // Render Scores
+        renderScoreScores(data.scores);
+
+        // Render HTTP List
+        renderHttpDetails(data.http);
+
+        // Render SSL List
+        renderSslDetails(data.security);
+
+        // Render SEO List
+        renderSeoDetails(data.seo);
+
+        // Render Performance List
+        renderPerfDetails(data.performance, data.http);
+
+        // Set developer JSON block
+        jsonCode.textContent = JSON.stringify(data, null, 2);
+      }
+
+      function renderScoreScores(scores) {
+        const avg = scores.average;
+        
+        // Update Average Circle
+        const circle = document.querySelector('#ringAverage svg circle.progress');
+        // Circumference of r=50 circle is 2 * PI * 50 = 314.16
+        const circumference = 2 * Math.PI * 50;
+        const offset = circumference - (avg / 100) * circumference;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = offset;
+
+        // Color ring based on score value
+        if (avg >= 90) {
+          circle.style.stroke = 'var(--success)';
+        } else if (avg >= 50) {
+          circle.style.stroke = 'var(--warning)';
+        } else {
+          circle.style.stroke = 'var(--danger)';
+        }
+
+        document.getElementById('scoreAverage').textContent = avg;
+
+        // Sub scores
+        document.getElementById('scoreSeo').textContent = `${scores.seo}%`;
+        const fillSeo = document.getElementById('fillSeo');
+        fillSeo.style.width = `${scores.seo}%`;
+        fillSeo.style.backgroundColor = getScoreColor(scores.seo);
+
+        document.getElementById('scoreAccess').textContent = `${scores.accessibility}%`;
+        const fillAccess = document.getElementById('fillAccess');
+        fillAccess.style.width = `${scores.accessibility}%`;
+        fillAccess.style.backgroundColor = getScoreColor(scores.accessibility);
+
+        document.getElementById('scoreBest').textContent = `${scores.bestPractices}%`;
+        const fillBest = document.getElementById('fillBest');
+        fillBest.style.width = `${scores.bestPractices}%`;
+        fillBest.style.backgroundColor = getScoreColor(scores.bestPractices);
+
+        document.getElementById('scorePerf').textContent = `${scores.performance}%`;
+        const fillPerf = document.getElementById('fillPerf');
+        fillPerf.style.width = `${scores.performance}%`;
+        fillPerf.style.backgroundColor = getScoreColor(scores.performance);
+      }
+
+      function getScoreColor(score) {
+        if (score >= 90) return 'var(--success)';
+        if (score >= 50) return 'var(--warning)';
+        return 'var(--danger)';
+      }
+
+      function createCheckItem(status, title, subtitle) {
+        let icon = '✖';
+        let cls = 'item-fail';
+        if (status === 'success') {
+          icon = '✔';
+          cls = 'item-pass';
+        } else if (status === 'warn') {
+          icon = '⚠';
+          cls = 'item-warn';
+        }
+        return `
+          <li class="${cls}">
+            <span class="check-icon">${icon}</span>
+            <div class="item-text">
+              <span class="item-title">${title}</span>
+              <span class="item-desc">${subtitle}</span>
+            </div>
+          </li>
+        `;
+      }
+
+      function renderHttpDetails(http) {
+        const list = document.getElementById('httpCheckList');
+        list.innerHTML = '';
+
+        if (http.status === null) {
+          list.innerHTML += createCheckItem('fail', 'Network Reachability', `Connection error: ${http.error || 'Server offline'}`);
+          return;
+        }
+
+        // Status code
+        const isOk = http.status >= 200 && http.status < 300;
+        const statusText = `HTTP Status: ${http.status} (${http.statusText || 'Unknown'})`;
+        list.innerHTML += createCheckItem(
+          isOk ? 'success' : 'fail', 
+          'HTTP Server Response', 
+          statusText
+        );
+
+        // Response time
+        const respTimeMs = http.responseTime;
+        let timeStatus = 'success';
+        if (respTimeMs > 1500) timeStatus = 'fail';
+        else if (respTimeMs > 800) timeStatus = 'warn';
+
+        list.innerHTML += createCheckItem(
+          timeStatus, 
+          'Server Response Latency', 
+          `Took ${respTimeMs}ms to respond`
+        );
+
+        // Redirects
+        const redirects = http.redirects;
+        let redirectStatus = 'success';
+        if (redirects > 3) redirectStatus = 'fail';
+        else if (redirects > 0) redirectStatus = 'warn';
+
+        list.innerHTML += createCheckItem(
+          redirectStatus, 
+          'Redirect Chain Count', 
+          redirects === 0 ? 'No redirects followed' : `Followed ${redirects} redirect(s)`
+        );
+
+        // Server headers
+        const server = http.headers.server || 'Not Exposed';
+        list.innerHTML += createCheckItem(
+          'success', 
+          'Target Server Banner', 
+          `Identified Server: ${server}`
+        );
+      }
+
+      function renderSslDetails(security) {
+        const list = document.getElementById('sslCheckList');
+        list.innerHTML = '';
+
+        if (!security.https) {
+          list.innerHTML += createCheckItem('fail', 'HTTPS Security protocol', 'Website does not force SSL connection. Data transfers are insecure.');
+          list.innerHTML += createCheckItem('fail', 'SSL/TLS Certificate Validity', 'Cannot establish secure cipher verification.');
+          return;
+        }
+
+        // HTTPS active
+        list.innerHTML += createCheckItem('success', 'HTTPS Secure Handshake', `Encryption protocol established via TLS`);
+
+        // Certificate expiration
+        const days = security.sslExpiryDays;
+        if (days === null) {
+          list.innerHTML += createCheckItem('fail', 'SSL Certificate Expiry', `Failed to audit expiry: ${security.error || 'Unknown TLS issue'}`);
+          return;
+        }
+
+        let certStatus = 'success';
+        let expiryMsg = `Certificate expires in ${days} days`;
+        if (days < 0) {
+          certStatus = 'fail';
+          expiryMsg = `Certificate EXPIRED ${Math.abs(days)} days ago!`;
+        } else if (days < 30) {
+          certStatus = 'warn';
+          expiryMsg = `Certificate expires soon! Only ${days} days remaining.`;
+        }
+
+        list.innerHTML += createCheckItem(certStatus, 'Certificate Expiration Date', expiryMsg);
+
+        // Cert Authority / Issuer
+        list.innerHTML += createCheckItem('success', 'Certificate Authority', `Issued by: ${security.issuer}`);
+
+        // Authorization Error
+        if (security.authorized) {
+          list.innerHTML += createCheckItem('success', 'Domain Validation Trust', 'Trusted Root Authority chain validated');
+        } else {
+          list.innerHTML += createCheckItem('fail', 'Domain Validation Trust', `Untrusted certificate: ${security.authorizationError || 'Self-signed or hostname mismatch'}`);
+        }
+      }
+
+      function renderSeoDetails(seo) {
+        const list = document.getElementById('seoCheckList');
+        list.innerHTML = '';
+
+        // Title
+        if (seo.title) {
+          const isLenOk = seo.titleContent && seo.titleContent.length >= 10 && seo.titleContent.length <= 70;
+          list.innerHTML += createCheckItem(
+            isLenOk ? 'success' : 'warn',
+            'Page Title Element',
+            `"${seo.titleContent}" (${seo.titleContent.length} chars. Ideal is 10-70)`
+          );
+        } else {
+          list.innerHTML += createCheckItem('fail', 'Page Title Element', 'Missing <title> tag. Essential for crawling.');
+        }
+
+        // Description
+        if (seo.metaDescription) {
+          const isLenOk = seo.metaDescriptionContent && seo.metaDescriptionContent.length >= 50 && seo.metaDescriptionContent.length <= 160;
+          list.innerHTML += createCheckItem(
+            isLenOk ? 'success' : 'warn',
+            'Meta Description Tag',
+            `"${seo.metaDescriptionContent.substring(0, 50)}..." (${seo.metaDescriptionContent.length} chars. Ideal is 50-160)`
+          );
+        } else {
+          list.innerHTML += createCheckItem('fail', 'Meta Description Tag', 'Missing meta description. Important for search snippet CTR.');
+        }
+
+        // H1 headings
+        let h1Status = 'success';
+        let h1Msg = `Found exactly 1 primary <h1> tag`;
+        if (seo.h1Count === 0) {
+          h1Status = 'fail';
+          h1Msg = `Missing <h1> tag. Must have exactly one primary heading.`;
+        } else if (seo.h1Count > 1) {
+          h1Status = 'warn';
+          h1Msg = `Found multiple (${seo.h1Count}) <h1> tags. Multiple headings can dilute SEO value.`;
+        }
+        list.innerHTML += createCheckItem(h1Status, 'Heading Structure', h1Msg);
+
+        // Alt tags
+        if (seo.missingAltImages > 0) {
+          list.innerHTML += createCheckItem('fail', 'Image Alternates (alt)', `Detected ${seo.missingAltImages} image(s) missing alt attributes.`);
+        } else {
+          list.innerHTML += createCheckItem('success', 'Image Alternates (alt)', 'All page images contain descriptions.');
+        }
+
+        // Canonical Tag
+        if (seo.canonical) {
+          list.innerHTML += createCheckItem('success', 'Canonical Tag Verification', 'Canonical tag specified, preventing index duplication.');
+        } else {
+          list.innerHTML += createCheckItem('warn', 'Canonical Tag Verification', 'Missing rel="canonical" link tag.');
+        }
+      }
+
+      function renderPerfDetails(perf, http) {
+        const list = document.getElementById('perfCheckList');
+        list.innerHTML = '';
+
+        // Response Time
+        const rt = perf.responseTimeMs;
+        let rtStatus = 'success';
+        if (rt > 1500) rtStatus = 'fail';
+        else if (rt > 800) rtStatus = 'warn';
+        list.innerHTML += createCheckItem(rtStatus, 'Audit Latency', `Response completed in ${rt}ms`);
+
+        // Document Size
+        const sizeBytes = perf.htmlSize;
+        const sizeFormatted = perf.contentLength;
+        let sizeStatus = 'success';
+        if (sizeBytes > 512000) sizeStatus = 'fail'; // > 500kb
+        else if (sizeBytes > 204800) sizeStatus = 'warn'; // > 200kb
+        list.innerHTML += createCheckItem(sizeStatus, 'DOM Document Weight', `Payload size is ${sizeFormatted}`);
+
+        // Script Bloat
+        const scripts = perf.scriptCount;
+        let scriptStatus = 'success';
+        if (scripts > 25) scriptStatus = 'fail';
+        else if (scripts > 12) scriptStatus = 'warn';
+        list.innerHTML += createCheckItem(scriptStatus, 'External Script Overload', `Detected ${scripts} external javascript payloads`);
+
+        // Stylesheet Bloat
+        const css = perf.cssCount;
+        let cssStatus = 'success';
+        if (css > 10) cssStatus = 'fail';
+        else if (css > 5) cssStatus = 'warn';
+        list.innerHTML += createCheckItem(cssStatus, 'CSS Stylesheet Overload', `Detected ${css} CSS resource sheets`);
+      }
+    });
+  </script>
+</body>
+</html>

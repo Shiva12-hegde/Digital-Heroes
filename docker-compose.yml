@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: page-pulse-audit-service:latest
+    container_name: page_pulse_app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - CACHE_TTL=60
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX=100
+      - AUDIT_TIMEOUT_MS=5000
+      - MAX_CONCURRENT_AUDITS=10
+    restart: unless-stopped
